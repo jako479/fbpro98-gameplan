@@ -22,8 +22,7 @@ from struct import Struct
 #         0x02 special_category (u8)
 #         0x03 user_category    (u8)
 #         0x04 play_name        (8s) - fixed 8-byte ASCII, not null-terminated
-#         0x0C offset           (u32) - position within STOCK98.MAP
-#         0x10 size             (u32) - length of play data
+#         0x0C stock_data       (6s) - opaque trailing bytes; meaning unknown
 #
 # J95 CHUNK
 #   J95_HEADER (8 bytes)
@@ -42,8 +41,9 @@ from struct import Struct
 
 G95_HEADER = Struct("<4sIBBBB")
 G95_OFFSETS_TABLE = Struct("<84H")
+G95_PLAY_HEADER = Struct("<BBBB")
 G95_PLAY_CUSTOM = Struct("<BBB")
-G95_PLAY_STOCK = Struct("<BBB8sII")
+G95_PLAY_STOCK_TAIL = Struct("<8s6s")
 J95_HEADER = Struct("<4sI")
 J95_PLAN_DATA = Struct("<BHHH")
 S98_HEADER = Struct("<4sI")

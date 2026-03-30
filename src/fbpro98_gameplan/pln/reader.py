@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from os import PathLike
 from pathlib import Path
-from struct import Struct
 
 from .model import GameplanPlay
-from .schema import G95_HEADER, G95_OFFSETS_TABLE, ID_G95
+from .schema import G95_HEADER, G95_OFFSETS_TABLE, G95_PLAY_HEADER, G95_PLAY_STOCK_TAIL, ID_G95
 
 StrPath = str | PathLike[str]
-STOCK_RECORD_TAIL = Struct("<8sII")
 
 
 class InvalidGameplanError(ValueError):
@@ -59,6 +57,7 @@ class Gameplan:
 
         offsets = G95_OFFSETS_TABLE.unpack_from(buffer, self.G95_HEADER_SIZE)
         records_start = self.G95_HEADER_SIZE + self.G95_OFFSETS_TABLE_SIZE
+        record_offsets: list[tuple[int, int]] = []
         for slot, relative_offset in enumerate(offsets):
             if relative_offset == 0:
                 continue
@@ -68,27 +67,33 @@ class Gameplan:
                 raise InvalidGameplanError(
                     f"Play offset {relative_offset:#x} for slot {slot} is out of range in {self.path}"
                 )
+            record_offsets.append((slot, record_offset))
 
-            play = self._parse_play(buffer, record_offset, g95_end, slot)
+        for index, (slot, record_offset) in enumerate(record_offsets):
+            if index + 1 < len(record_offsets):
+                record_end = record_offsets[index + 1][1]
+            else:
+                record_end = g95_end
+
+            play = self._parse_play(buffer, record_offset, record_end, slot)
             self.plays_by_slot[slot] = play
             self._store_play(play)
 
     def _parse_play(
-        self, buffer: bytes, buffer_offset: int, g95_end: int, slot: int
+        self, buffer: bytes, buffer_offset: int, record_end: int, slot: int
     ) -> GameplanPlay:
-        if buffer_offset + 4 > g95_end:
+        if buffer_offset + 4 > record_end:
             raise InvalidGameplanError(
                 f"Truncated play header at {buffer_offset:#x} in {self.path}"
             )
 
-        stock_flag = buffer[buffer_offset]
-        play_category = buffer[buffer_offset + 1]
-        special_category = buffer[buffer_offset + 2]
-        user_category = buffer[buffer_offset + 3]
+        stock_flag, play_category, special_category, user_category = G95_PLAY_HEADER.unpack_from(
+            buffer, buffer_offset
+        )
         buffer_offset += 4
 
         if stock_flag == 0:
-            filename = self._read_c_string(buffer, buffer_offset, g95_end)
+            filename = self._read_c_string(buffer, buffer_offset, record_end)
             return GameplanPlay(
                 slot=slot,
                 stock_flag=stock_flag,
@@ -99,11 +104,11 @@ class Gameplan:
             )
 
         if stock_flag == 1:
-            if buffer_offset + STOCK_RECORD_TAIL.size > g95_end:
+            if buffer_offset + G95_PLAY_STOCK_TAIL.size > record_end:
                 raise InvalidGameplanError(
                     f"Truncated stock play record at {buffer_offset:#x} in {self.path}"
                 )
-            name_bytes, offset, size = STOCK_RECORD_TAIL.unpack_from(buffer, buffer_offset)
+            name_bytes, stock_data = G95_PLAY_STOCK_TAIL.unpack_from(buffer, buffer_offset)
             play_name = name_bytes.decode("ASCII", errors="replace").rstrip("\x00 ")
             return GameplanPlay(
                 slot=slot,
@@ -112,16 +117,15 @@ class Gameplan:
                 special_category=special_category,
                 user_category=user_category,
                 play_name=play_name,
-                offset=offset,
-                size=size,
+                stock_data=stock_data,
             )
 
         raise InvalidGameplanError(
             f"Invalid stock flag {stock_flag:#x} at slot {slot} in {self.path}"
         )
 
-    def _read_c_string(self, buffer: bytes, buffer_offset: int, g95_end: int) -> str:
-        string_end = buffer.find(b"\x00", buffer_offset, g95_end)
+    def _read_c_string(self, buffer: bytes, buffer_offset: int, record_end: int) -> str:
+        string_end = buffer.find(b"\x00", buffer_offset, record_end)
         if string_end == -1:
             raise InvalidGameplanError(
                 f"Missing null terminator for play record at {buffer_offset:#x} in {self.path}"

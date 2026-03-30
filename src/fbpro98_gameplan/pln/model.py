@@ -14,6 +14,7 @@ class GameplanPlay:
     special_category: int
     user_category: int
     filename: str | None = None
+    stock_data: bytes | None = None
     play_name: str | None = None
     offset: int | None = None
     size: int | None = None
