@@ -1,6 +1,6 @@
 # fbpro98-gameplan
 
-Library for parsing Front Page Sports Football Pro '98 gameplan files.
+Library for parsing Front Page Sports Football Pro '98 gameplan (`.pln`) files.
 
 ## Setup
 
@@ -40,16 +40,22 @@ print(play.slot)
 print(play.name)
 ```
 
-Implemented scope:
+## Scope
+
+Implemented:
 
 - Parse the `G95` play table used by existing PNFL tooling.
 - Expose lookups by slot and by normalized play name.
 - Preserve the compatibility names `PLN`, `PlayInPlan`, and `InvalidPLNError` for `pnfl-pdbtoexcel`.
+- Validate real offense and defense `.pln` fixtures in the test suite.
 
-Not implemented yet:
+Deliberately not implemented:
 
 - writing or editing `.pln` files
 - broader domain abstractions beyond the current reader surface
+
+This library is intentionally narrow. New behavior should generally be added only
+when a consuming tool actually needs it, rather than growing speculative APIs here.
 
 ## Testing
 

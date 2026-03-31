@@ -8,7 +8,7 @@ gameplan (.pln) files.
 
 __version__ = "0.1.0"
 
-from .parser import load_gameplan, read_gameplan
+from .parser import read_gameplan
 from .pln import (
     Gameplan,
     GameplanPlay,
@@ -25,6 +25,5 @@ __all__ = [
     "InvalidPLNError",
     "PLN",
     "PlayInPlan",
-    "load_gameplan",
     "read_gameplan",
 ]

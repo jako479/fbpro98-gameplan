@@ -10,6 +10,3 @@ StrPath = str | PathLike[str]
 def read_gameplan(path: StrPath) -> Gameplan:
     """Read a Football Pro '98 gameplan (.pln) file."""
     return Gameplan(path)
-
-
-load_gameplan = read_gameplan
