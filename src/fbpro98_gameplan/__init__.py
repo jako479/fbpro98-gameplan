@@ -14,8 +14,10 @@ from .pln import (
     GameplanPlay,
     InvalidGameplanError,
     InvalidPLNError,
+    NormalPlayEntry,
     PLN,
     PlayInPlan,
+    write_normal_plays,
 )
 
 __all__ = [
@@ -23,7 +25,9 @@ __all__ = [
     "GameplanPlay",
     "InvalidGameplanError",
     "InvalidPLNError",
+    "NormalPlayEntry",
     "PLN",
     "PlayInPlan",
     "read_gameplan",
+    "write_normal_plays",
 ]

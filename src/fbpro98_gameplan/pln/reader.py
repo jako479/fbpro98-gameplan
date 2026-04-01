@@ -4,7 +4,16 @@ from os import PathLike
 from pathlib import Path
 
 from .model import GameplanPlay
-from .schema import G95_HEADER, G95_OFFSETS_TABLE, G95_PLAY_HEADER, G95_PLAY_STOCK_TAIL, ID_G95
+from .schema import (
+    G95_HEADER,
+    G95_OFFSETS_TABLE,
+    G95_PLAY_HEADER,
+    G95_PLAY_STOCK_TAIL,
+    ID_G95,
+    ID_J95,
+    J95_HEADER,
+    J95_PLAN_DATA,
+)
 
 StrPath = str | PathLike[str]
 
@@ -18,6 +27,8 @@ class Gameplan:
     NUMBER_SPECIAL_PLAYS = 10
     NUMBER_STOCK_SPECIAL_PLAYS = 10
     NUMBER_PLAY_SLOTS = NUMBER_NORMAL_PLAYS + NUMBER_SPECIAL_PLAYS + NUMBER_STOCK_SPECIAL_PLAYS
+    PROFILE_DEFENSE = 0
+    PROFILE_OFFENSE = 1
     G95_HEADER_SIZE = G95_HEADER.size
     G95_OFFSETS_TABLE_SIZE = G95_OFFSETS_TABLE.size
 
@@ -33,6 +44,7 @@ class Gameplan:
         self.unknown2 = 1
         self.unknown3 = 2
         self.unknown4 = 3
+        self.profile_type = 0
 
         buffer = self.path.read_bytes()
         self._parse(buffer)
@@ -78,6 +90,18 @@ class Gameplan:
             play = self._parse_play(buffer, record_offset, record_end, slot)
             self.plays_by_slot[slot] = play
             self._store_play(play)
+
+        self._parse_j95(buffer, g95_end)
+
+    def _parse_j95(self, buffer: bytes, g95_end: int) -> None:
+        if len(buffer) < g95_end + J95_HEADER.size + J95_PLAN_DATA.size:
+            return
+        j95_id, j95_size = J95_HEADER.unpack_from(buffer, g95_end)
+        if j95_id != ID_J95:
+            return
+        self.profile_type = J95_PLAN_DATA.unpack_from(
+            buffer, g95_end + J95_HEADER.size,
+        )[0]
 
     def _parse_play(
         self, buffer: bytes, buffer_offset: int, record_end: int, slot: int
@@ -131,6 +155,14 @@ class Gameplan:
                 f"Missing null terminator for play record at {buffer_offset:#x} in {self.path}"
             )
         return buffer[buffer_offset:string_end].decode("ASCII", errors="replace")
+
+    @property
+    def is_offense(self) -> bool:
+        return self.profile_type == self.PROFILE_OFFENSE
+
+    @property
+    def is_defense(self) -> bool:
+        return self.profile_type == self.PROFILE_DEFENSE
 
     def _store_play(self, play: GameplanPlay) -> None:
         if play.slot < self.NUMBER_NORMAL_PLAYS:

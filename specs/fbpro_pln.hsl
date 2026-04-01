@@ -1,0 +1,109 @@
+/*****************************************************************************
+ * fbpro_prf.hsl - Structure definitions for the .prf file format
+ *  
+ * Copyright (c) 2024 Brian Jacobs, All Rights Reserved
+ *
+ *****************************************************************************
+ * Revision History:
+ *  2024-04-05 - BAJ - Original
+ */
+
+#include "standard-types.hsl"
+
+#pragma displayname("FBPro98 pln structures")
+#pragma fileextensions(".pln")
+#pragma byteorder(little_endian)
+
+#pragma hide()
+
+#pragma enumsize(4)
+typedef enum CHUNK_TYPE
+{
+    G95 = "G95:",
+    J95 = "J95:",
+    S98 = "S98:"
+
+} CHUNK_TYPE;
+
+struct STOCK_PLAY
+{
+    BYTE        stockFlag;          // 0x00 // 0x01 = STOCK (fixed-length)
+	BYTE        playCategory;       // 0x01 // 0x92
+	BYTE        specialCategory;    // 0x02 // 0x00
+    BYTE        userCategory;       // 0x03 // 0x84
+    CHAR        playName[8];        // 0x04 // Fixed size
+	DWORD       offset;				// 0x0C
+	WORD        size;				// 0x10
+};
+
+struct CUSTOM_PLAY
+{
+    BYTE        stockFlag;          // 0x00 // 0x00 = CUSTOM (variable-length)
+	BYTE        playCategory;       // 0x01 // 0x92
+	BYTE        specialCategory;    // 0x02 // 0x00
+    CHAR        userCategory;       // 0x03 // 0x84
+    zstring     playName;           // 0x04 // Relative path; Null-terminated
+};
+
+union PLAY_IN_PLAN
+{
+	struct STOCK_PLAY stock;
+	struct CUSTOM_PLAY cust;
+};
+
+#pragma show()
+
+struct G95
+{
+#pragma lockAt(0x00000000)
+
+    CHUNK_TYPE           id;                    // 0x00
+    DWORD                size;                  // 0x04 // stream length
+	CHAR                 audible[4];            // 0x08 // 0x00
+	WORD                 offsets[86];           // 0x0C // offset to each play (starting from 0x0C)
+	union PLAY_IN_PLAN   normalPlays[64];       // 0xB8 // variable length;
+	union PLAY_IN_PLAN   specialPlays[10];      //      // variable length;
+	union PLAY_IN_PLAN   stockSpecialPlays[10]; //      // variable length;
+	union PLAY_IN_PLAN   clockPlays[2];         //
+
+    __verify(id == CHUNK_TYPE.G95);
+};
+
+#pragma enumsize(1)
+typedef enum PROFILE_TYPE
+{
+    DEFENSE = 0,
+    OFFENSE = 1
+
+} PROFILE_TYPE;
+
+struct J95
+{
+    CHUNK_TYPE      id;                 // 0x00
+    DWORD           size;               // 0x04 // stream length // 0x07
+    PROFILE_TYPE    type;               // 0x08 // char OffFlag
+    WORD            numCustomPlays;     // 0x09
+    WORD            numStockPlays;      // 0x0B
+    WORD            numSpecialPlays;    // 0x0D
+                                        // 0x0F
+
+    __verify(id == CHUNK_TYPE.J95);
+    __verify(size == 0x07);
+};
+
+struct S98
+{
+    CHUNK_TYPE      id;                 // 0x00
+    DWORD           size;               // 0x04 // stream length
+    BYTE            mapFilename[size];  // 0x08
+
+    __verify(id == CHUNK_TYPE.S98);
+};
+
+struct PLNFILE
+{
+#pragma lockAt(0x00000000)
+    struct G95      g95;                // 0x00
+    struct J95      j95;                // 0x04
+    struct S98      s98;                // 0x08 // STOCK98.MAP
+};
