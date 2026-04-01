@@ -25,11 +25,6 @@ class GameplanPlay:
             return PureWindowsPath(self.filename).stem
         return self.play_name or ""
 
-    @property
-    def special_flag(self) -> int:
-        # `pnfl-pdbtoexcel` historically used both names for the same raw byte.
-        return self.special_category
-
     def get_name(self) -> str:
         return self.name
 
