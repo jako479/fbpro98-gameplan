@@ -31,8 +31,9 @@ entries = [
 ]
 write_normal_plays("DEN-OGP1.pln", entries)
 ```
-`write_normal_plays` modifies only the 64 normal-play slots. Special and
-stock-special plays (slots 64-83) are preserved. J95 counts are recalculated.
+`write_normal_plays` modifies only the 64 normal-play slots. Special-teams
+plays (slots 64-83) and clock plays (slots 84-85) are preserved. J95 counts
+are recalculated.
 ## Testing
 ```bash
 pytest

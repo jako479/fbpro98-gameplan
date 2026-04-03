@@ -58,9 +58,8 @@ struct G95 {
                           // 1-10, alternating between non-stock and stock
                           // versions of each. Each special teams play has
                           // playCategory of 1 and userCategory of 1.
-    PlayInPlan plays[86]; // Size of array reduced by 'continue' statement in
-                          // PlayInPlan when J95 is encountered early. Occurs
-                          // due to empty slots in the game plan.
+    PlayInPlan plays[N];  // Size of array is variable based on the number of
+                          // slots that are filled.
 
     std::assert(id == ChunkType::G95, "Invalid chunk ID");
 };

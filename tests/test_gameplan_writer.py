@@ -126,6 +126,16 @@ def test_too_many_entries_raises() -> None:
 
 def test_j95_counts_updated(tmp_path: Path) -> None:
     pln_path = _copy_fixture(OFFENSE_PATH, tmp_path)
+
+    # Read original J95 counts before writing.
+    from fbpro98_gameplan.pln.schema import J95_HEADER, J95_PLAN_DATA
+    original = read_gameplan(pln_path)
+    orig_buf = pln_path.read_bytes()
+    orig_g95_end = 8 + original.g95_size
+    _, _, orig_stock, orig_special = J95_PLAN_DATA.unpack_from(
+        orig_buf, orig_g95_end + J95_HEADER.size,
+    )
+
     entries = [_make_entry(f"PLAY{i:02d}") for i in range(10)]
     write_normal_plays(pln_path, entries)
 
@@ -133,23 +143,14 @@ def test_j95_counts_updated(tmp_path: Path) -> None:
     reloaded = read_gameplan(pln_path)
     g95_end = 8 + reloaded.g95_size
 
-    from fbpro98_gameplan.pln.schema import J95_HEADER, J95_PLAN_DATA
     j95_payload_offset = g95_end + J95_HEADER.size
     profile_type, num_custom, num_stock, num_special = J95_PLAN_DATA.unpack_from(
         buf, j95_payload_offset,
     )
 
-    expected_custom = 10 + sum(
-        1 for s in range(64, 84)
-        if (p := reloaded.plays_by_slot.get(s)) is not None and p.is_custom()
-    )
-    expected_stock = sum(
-        1 for s in range(64, 84)
-        if (p := reloaded.plays_by_slot.get(s)) is not None and p.is_stock()
-    )
-
-    assert num_custom == expected_custom
-    assert num_stock == expected_stock
+    assert num_custom == 10
+    assert num_stock == orig_stock
+    assert num_special == orig_special
     assert profile_type == 1  # offense
 
 

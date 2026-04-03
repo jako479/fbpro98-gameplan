@@ -24,7 +24,7 @@ def _load_fixture_bytes(path: Path) -> bytearray:
 
 
 def _first_used_slot_offset(data: bytes) -> tuple[int, int]:
-    offsets = struct.unpack_from("<84H", data, 12)
+    offsets = struct.unpack_from("<86H", data, 12)
     for slot, relative_offset in enumerate(offsets):
         if relative_offset != 0:
             return slot, 12 + relative_offset
@@ -32,7 +32,7 @@ def _first_used_slot_offset(data: bytes) -> tuple[int, int]:
 
 
 def _first_custom_record_offset(data: bytes) -> tuple[int, int]:
-    offsets = struct.unpack_from("<84H", data, 12)
+    offsets = struct.unpack_from("<86H", data, 12)
     for slot, relative_offset in enumerate(offsets):
         if relative_offset == 0:
             continue
@@ -45,7 +45,7 @@ def _first_custom_record_offset(data: bytes) -> tuple[int, int]:
 def _assert_plan_sane(plan: PLN) -> None:
     assert isinstance(plan, PLN)
     assert plan.plays_by_slot
-    assert plan.normal_plays or plan.special_plays or plan.stock_special_plays
+    assert plan.normal_plays or plan.special_plays or plan.clock_plays
 
     for slot, play in plan.plays_by_slot.items():
         assert 0 <= slot < plan.NUMBER_PLAY_SLOTS
@@ -57,10 +57,10 @@ def _assert_plan_sane(plan: PLN) -> None:
 
         if slot < plan.NUMBER_NORMAL_PLAYS:
             assert play.name in plan.normal_plays
-        elif slot < plan.NUMBER_NORMAL_PLAYS + plan.NUMBER_SPECIAL_PLAYS:
+        elif slot < plan.NUMBER_NORMAL_PLAYS + plan.NUMBER_SPECIAL_SLOTS:
             assert play.name in plan.special_plays
         else:
-            assert play.name in plan.stock_special_plays
+            assert play.name in plan.clock_plays
 
 
 def test_real_offense_gameplan_parses():

@@ -24,9 +24,9 @@ class InvalidGameplanError(ValueError):
 
 class Gameplan:
     NUMBER_NORMAL_PLAYS = 64
-    NUMBER_SPECIAL_PLAYS = 10
-    NUMBER_STOCK_SPECIAL_PLAYS = 10
-    NUMBER_PLAY_SLOTS = NUMBER_NORMAL_PLAYS + NUMBER_SPECIAL_PLAYS + NUMBER_STOCK_SPECIAL_PLAYS
+    NUMBER_SPECIAL_SLOTS = 20  # 10 special-teams categories × 2 (non-stock + stock)
+    NUMBER_CLOCK_SLOTS = 2     # Offense only
+    NUMBER_PLAY_SLOTS = NUMBER_NORMAL_PLAYS + NUMBER_SPECIAL_SLOTS + NUMBER_CLOCK_SLOTS  # 86
     PROFILE_DEFENSE = 0
     PROFILE_OFFENSE = 1
     G95_HEADER_SIZE = G95_HEADER.size
@@ -37,13 +37,10 @@ class Gameplan:
         self.path = Path(filename)
         self.normal_plays: dict[str, GameplanPlay] = {}
         self.special_plays: dict[str, GameplanPlay] = {}
-        self.stock_special_plays: dict[str, GameplanPlay] = {}
+        self.clock_plays: dict[str, GameplanPlay] = {}
         self.plays_by_slot: dict[int, GameplanPlay] = {}
         self.g95_size = 0
-        self.unknown1 = 0
-        self.unknown2 = 1
-        self.unknown3 = 2
-        self.unknown4 = 3
+        self.audible = b"\x00\x01\x02\x03"
         self.profile_type = 0
 
         buffer = self.path.read_bytes()
@@ -56,9 +53,7 @@ class Gameplan:
                 f"File too small to contain PLN header and offsets table in {self.path}"
             )
 
-        chunk_id, self.g95_size, self.unknown1, self.unknown2, self.unknown3, self.unknown4 = (
-            G95_HEADER.unpack_from(buffer, 0)
-        )
+        chunk_id, self.g95_size, self.audible = G95_HEADER.unpack_from(buffer, 0)
         self.id = chunk_id.decode("ASCII", errors="replace")
         if chunk_id != ID_G95:
             raise InvalidGameplanError(f"Invalid header '{self.id}' at 0x0 in {self.path}")
@@ -167,10 +162,10 @@ class Gameplan:
     def _store_play(self, play: GameplanPlay) -> None:
         if play.slot < self.NUMBER_NORMAL_PLAYS:
             self.normal_plays[play.name] = play
-        elif play.slot < self.NUMBER_NORMAL_PLAYS + self.NUMBER_SPECIAL_PLAYS:
+        elif play.slot < self.NUMBER_NORMAL_PLAYS + self.NUMBER_SPECIAL_SLOTS:
             self.special_plays[play.name] = play
         else:
-            self.stock_special_plays[play.name] = play
+            self.clock_plays[play.name] = play
 
 
 PLN = Gameplan
