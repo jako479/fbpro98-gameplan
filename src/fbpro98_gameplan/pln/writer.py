@@ -15,6 +15,7 @@ from .schema import (
     ID_G95,
     J95_HEADER,
     J95_PLAN_DATA,
+    S98_HEADER,
 )
 
 StrPath = str | PathLike[str]
@@ -113,8 +114,16 @@ def write_normal_plays(
     j95 += J95_HEADER.pack(b"J95:", J95_PLAN_DATA.size)
     j95 += J95_PLAN_DATA.pack(gameplan.profile_type, num_custom, num_stock, num_special)
 
-    # Preserve S98 chunk as-is.
+    # Write S98 chunk (header + declared payload only).
     s98_start = g95_original_end + J95_HEADER.size + j95_size
-    s98 = buffer[s98_start:]
+    _, s98_size = S98_HEADER.unpack_from(buffer, s98_start)
+    s98 = buffer[s98_start:s98_start + S98_HEADER.size + s98_size]
 
-    path.write_bytes(bytes(g95 + j95 + s98))
+    output = bytes(g95 + j95 + s98)
+
+    # Pad to correct parity: offense = even, defense = odd.
+    needs_odd = gameplan.profile_type == Gameplan.PROFILE_DEFENSE
+    if len(output) % 2 != needs_odd:
+        output += b"\x00"
+
+    path.write_bytes(output)
