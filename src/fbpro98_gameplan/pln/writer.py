@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
 
-from .model import GameplanPlay
-from .reader import Gameplan
+from .model import GamePlanPlay
+from .reader import GamePlan
 from .schema import (
     G95_HEADER,
     G95_OFFSETS_TABLE,
@@ -43,24 +43,24 @@ def write_normal_plays(
     """
     path = Path(path)
     buffer = path.read_bytes()
-    gameplan = Gameplan(path)
+    gameplan = GamePlan.from_buffer(buffer, path)
 
-    if len(entries) > Gameplan.NUMBER_NORMAL_PLAYS:
+    if len(entries) > GamePlan.NUMBER_NORMAL_PLAYS:
         raise ValueError(
-            f"Expected at most {Gameplan.NUMBER_NORMAL_PLAYS} entries, got {len(entries)}"
+            f"Expected at most {GamePlan.NUMBER_NORMAL_PLAYS} entries, got {len(entries)}"
         )
 
-    padded = list(entries) + [None] * (Gameplan.NUMBER_NORMAL_PLAYS - len(entries))
+    padded = list(entries) + [None] * (GamePlan.NUMBER_NORMAL_PLAYS - len(entries))
 
     # Collect existing special-teams play records (slots 64-83) in slot order.
-    preserved_plays: list[GameplanPlay] = []
-    for slot in range(Gameplan.NUMBER_NORMAL_PLAYS, Gameplan.NUMBER_PLAY_SLOTS):
+    preserved_plays: list[GamePlanPlay] = []
+    for slot in range(GamePlan.NUMBER_NORMAL_PLAYS, GamePlan.NUMBER_PLAY_SLOTS):
         play = gameplan.plays_by_slot.get(slot)
         if play is not None:
             preserved_plays.append(play)
 
     # Build play records blob and offsets table (86 entries: 64 normal + 20 special + 2 clock).
-    offsets = [0] * Gameplan.NUMBER_PLAY_SLOTS
+    offsets = [0] * GamePlan.NUMBER_PLAY_SLOTS
     records = bytearray()
     records_base = G95_HEADER.size + G95_OFFSETS_TABLE.size
 
@@ -76,8 +76,8 @@ def write_normal_plays(
 
     # Preserve clock slot offsets (84-85) from the original file.
     orig_offsets = G95_OFFSETS_TABLE.unpack_from(buffer, G95_HEADER.size)
-    clock_start = Gameplan.NUMBER_NORMAL_PLAYS + Gameplan.NUMBER_SPECIAL_SLOTS
-    for slot in range(clock_start, Gameplan.NUMBER_PLAY_SLOTS):
+    clock_start = GamePlan.NUMBER_NORMAL_PLAYS + GamePlan.NUMBER_SPECIAL_SLOTS
+    for slot in range(clock_start, GamePlan.NUMBER_PLAY_SLOTS):
         offsets[slot] = orig_offsets[slot]
 
     # Write preserved special-teams play records (slots 64-83).
@@ -122,7 +122,7 @@ def write_normal_plays(
     output = bytes(g95 + j95 + s98)
 
     # Pad to correct parity: offense = even, defense = odd.
-    needs_odd = gameplan.profile_type == Gameplan.PROFILE_DEFENSE
+    needs_odd = gameplan.profile_type == GamePlan.PROFILE_DEFENSE
     if len(output) % 2 != needs_odd:
         output += b"\x00"
 

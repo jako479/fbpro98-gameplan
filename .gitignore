@@ -7,7 +7,7 @@ __pycache__/
 *.pdb
 *.egg-info/
 .eggs/
-.build/
+build/
 dist/
 pip-wheel-metadata/
 .pytest_cache/

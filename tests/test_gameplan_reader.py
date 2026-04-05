@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from fbpro98_gameplan import InvalidPLNError, PLN, read_gameplan
+from fbpro98_gameplan import InvalidGamePlanError, GamePlan, read_gameplan
 
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -42,8 +42,8 @@ def _first_custom_record_offset(data: bytes) -> tuple[int, int]:
     pytest.skip("Fixture does not contain a custom play record")
 
 
-def _assert_plan_sane(plan: PLN) -> None:
-    assert isinstance(plan, PLN)
+def _assert_plan_sane(plan: GamePlan) -> None:
+    assert isinstance(plan, GamePlan)
     assert plan.plays_by_slot
     assert plan.normal_plays or plan.special_plays or plan.clock_plays
 
@@ -79,7 +79,7 @@ def test_invalid_header_raises(tmp_path):
     gameplan_path = tmp_path / "bad_header.pln"
     gameplan_path.write_bytes(data)
 
-    with pytest.raises(InvalidPLNError, match="Invalid header"):
+    with pytest.raises(InvalidGamePlanError, match="Invalid header"):
         read_gameplan(gameplan_path)
 
 
@@ -90,7 +90,7 @@ def test_out_of_range_offset_raises(tmp_path):
     gameplan_path = tmp_path / "bad_offset.pln"
     gameplan_path.write_bytes(data)
 
-    with pytest.raises(InvalidPLNError, match="out of range"):
+    with pytest.raises(InvalidGamePlanError, match="out of range"):
         read_gameplan(gameplan_path)
 
 
@@ -103,5 +103,5 @@ def test_missing_null_terminator_raises(tmp_path):
     gameplan_path = tmp_path / "bad_string.pln"
     gameplan_path.write_bytes(data)
 
-    with pytest.raises(InvalidPLNError, match="Missing null terminator"):
+    with pytest.raises(InvalidGamePlanError, match="Missing null terminator"):
         read_gameplan(gameplan_path)

@@ -5,7 +5,7 @@ from pathlib import PureWindowsPath
 
 
 @dataclass(frozen=True, slots=True)
-class GameplanPlay:
+class GamePlanPlay:
     """A single play entry as stored in a `.pln` file."""
 
     slot: int
