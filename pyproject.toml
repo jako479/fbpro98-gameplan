@@ -4,18 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fbpro98-gameplan"
-version = "0.1.0"
+version = "1.0.1"
 description = "Library for parsing Front Page Sports Football Pro '98 gameplan files"
-authors = [{name = "Brian J"}]
+authors = [{ name = "Brian J" }]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
-dev = [
-    "pytest",
-    "ruff"
-]
+dev = ["pytest", "ruff"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

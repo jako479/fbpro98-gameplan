@@ -23,7 +23,7 @@ def _load_fixture_bytes(path: Path) -> bytearray:
     return bytearray(_require_fixture(path).read_bytes())
 
 
-def _first_used_slot_offset(data: bytes) -> tuple[int, int]:
+def _first_used_slot_offset(data: bytes | bytearray) -> tuple[int, int]:
     offsets = struct.unpack_from("<86H", data, 12)
     for slot, relative_offset in enumerate(offsets):
         if relative_offset != 0:
@@ -31,7 +31,7 @@ def _first_used_slot_offset(data: bytes) -> tuple[int, int]:
     raise AssertionError("Fixture does not contain any play records")
 
 
-def _first_custom_record_offset(data: bytes) -> tuple[int, int]:
+def _first_custom_record_offset(data: bytes | bytearray) -> tuple[int, int]:
     offsets = struct.unpack_from("<86H", data, 12)
     for slot, relative_offset in enumerate(offsets):
         if relative_offset == 0:

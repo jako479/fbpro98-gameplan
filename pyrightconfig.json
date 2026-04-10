@@ -1,8 +1,8 @@
 {
-  "typeCheckingMode": "basic", // off | basic | strict
-  "venvPath": ".",
+  "typeCheckingMode": "basic",
+  "reportUnusedImport": "warning",
+  "venvPath": "..",
   "venv": ".venv",
-  "reportMissingImports": "none",
   "extraPaths": ["src", "tests"],
   "include": ["src", "tests"]
 }
