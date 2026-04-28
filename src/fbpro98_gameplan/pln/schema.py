@@ -2,14 +2,17 @@ from struct import Struct
 
 # See specs/pln.md for full .pln format documentation.
 
-G95_HEADER = Struct("<4sI4s")
+DEFAULT_AUDIBLE = b"\x00\x01\x02\x03"
+
+G95_HEADER = Struct("<4sI")
+G95_AUDIBLE = Struct("<4s")
 G95_OFFSETS_TABLE = Struct("<86H")
 G95_PLAY_HEADER = Struct("<BBBB")
-G95_PLAY_CUSTOM = Struct("<BBB")
-G95_PLAY_STOCK_TAIL = Struct("<8s6s")
+G95_STOCK_PLAY_BODY = Struct("<8sIH")
 J95_HEADER = Struct("<4sI")
 J95_PLAN_DATA = Struct("<BHHH")
 S98_HEADER = Struct("<4sI")
+S98_EXPECTED_PAYLOAD = b"STOCK98.MAP\x00"
 
 ID_G95 = b"G95:"
 ID_J95 = b"J95:"

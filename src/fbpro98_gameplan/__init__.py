@@ -1,27 +1,31 @@
-"""
-fbpro98_gameplan
-================
+"""fbpro98-gameplan — Library for parsing Front Page Sports Football Pro '98 gameplan (.pln) files."""
 
-Library for reading and writing Front Page Sports Football Pro '98
-gameplan (.pln) files.
-"""
-
-__version__ = "0.1.0"
-
-from .parser import read_gameplan
-from .pln import (
+from fbpro98_gameplan.pln.model import (
+    CustomPlay,
     GamePlan,
-    GamePlanPlay,
+    Play,
+    ProfileType,
+    StockPlay,
+)
+from fbpro98_gameplan.pln.reader import (
     InvalidGamePlanError,
-    NormalPlayEntry,
-    write_normal_plays,
+    parse_gameplan,
+    read_gameplan,
+)
+from fbpro98_gameplan.pln.writer import (
+    build_gameplan_bytes,
+    write_gameplan,
 )
 
 __all__ = [
+    "CustomPlay",
     "GamePlan",
-    "GamePlanPlay",
     "InvalidGamePlanError",
-    "NormalPlayEntry",
+    "Play",
+    "ProfileType",
+    "StockPlay",
+    "build_gameplan_bytes",
+    "parse_gameplan",
     "read_gameplan",
-    "write_normal_plays",
+    "write_gameplan",
 ]

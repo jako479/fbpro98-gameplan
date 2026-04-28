@@ -9,7 +9,7 @@
 #pragma endian little
 #pragma pattern_limit 200000
 
-//using import std.sys;
+#include <std/sys.pat>
 
 // ---- 4-byte tags (little-endian) ----
 enum ChunkType : u32 {
@@ -58,8 +58,10 @@ struct G95 {
                           // 1-10, alternating between non-stock and stock
                           // versions of each. Each special teams play has
                           // playCategory of 1 and userCategory of 1.
-    PlayInPlan plays[N];  // Size of array is variable based on the number of
-                          // slots that are filled.
+
+    // Plays continue until the end of the G95 chunk (id+len header is 8 bytes,
+    // then `len` bytes of payload).
+    PlayInPlan plays[while($ < addressof(this) + 8 + len)];
 
     std::assert(id == ChunkType::G95, "Invalid chunk ID");
 };
@@ -90,6 +92,7 @@ struct S98 {
     // ignore any trailing padding at EOF
 
     std::assert(id == ChunkType::S98, "Invalid chunk ID");
+    std::assert(len == 12, "Invalid payload length");
 };
 
 // ---- Top-level file ----
@@ -99,8 +102,5 @@ struct PlnFile {
     S98 s98;    // 0x08
 };
 
-G95 g95 @ 0x00;
-J95 j95 @ 0xAA9;
-S98 s98 @ 0xAB8;
 
-//PlnFile plnfile_at_0x00 @ 0x00;
+PlnFile plnfile_at_0x00 @ 0x00;
