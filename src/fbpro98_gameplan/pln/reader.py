@@ -1,3 +1,10 @@
+"""Parse FbPro98 .pln gameplan files into GamePlan objects.
+
+Reads the three on-disk chunks (G95 plays + offsets, J95 plan metadata, S98
+stock-map filename) and validates structural invariants (offset bounds, J95
+declared counts, file-size parity by profile type).
+"""
+
 from __future__ import annotations
 
 from os import PathLike

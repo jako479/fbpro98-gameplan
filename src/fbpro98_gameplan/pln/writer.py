@@ -1,3 +1,10 @@
+"""Serialize GamePlan objects back to FbPro98 .pln file bytes.
+
+Builds the three on-disk chunks (G95 plays + offsets, J95 plan metadata,
+S98 stock-map filename) and pads the file to the parity expected by the
+gameplan's profile type (offense even, defense odd).
+"""
+
 from __future__ import annotations
 
 from os import PathLike

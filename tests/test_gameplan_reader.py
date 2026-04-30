@@ -15,7 +15,6 @@ from fbpro98_gameplan import (
 )
 from fbpro98_gameplan.pln.schema import G95_HEADER, J95_HEADER, J95_PLAN_DATA
 
-
 TEST_DATA_DIR = Path(__file__).resolve().parent / "data"
 OFFENSE_PATH = TEST_DATA_DIR / "offense.pln"
 DEFENSE_PATH = TEST_DATA_DIR / "defense.pln"

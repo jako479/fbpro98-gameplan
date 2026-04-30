@@ -1,3 +1,9 @@
+"""In-memory data model for FbPro98 .pln gameplan files.
+
+Defines the immutable types that the reader produces and the writer consumes:
+ProfileType, CustomPlay, StockPlay, and the top-level GamePlan dataclass.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -8,6 +14,8 @@ from typing import ClassVar, cast
 
 
 class ProfileType(IntEnum):
+    """Whether a gameplan is for defense (0) or offense (1). Encoded in J95 plan data."""
+
     DEFENSE = 0
     OFFENSE = 1
 
@@ -108,12 +116,24 @@ class GamePlan:
         return tuple(cast("StockPlay | None", self.special_plays[i]) for i in range(1, self.NUMBER_SPECIAL_SLOTS, 2))
 
     def with_normal_plays(self, plays: Sequence[Play | None]) -> GamePlan:
+        """Return a new GamePlan with `plays` placed in the 64 normal slots.
+
+        Shorter sequences are right-padded with None to fill all 64 slots;
+        longer sequences raise ValueError. Original GamePlan is not mutated.
+        """
         if len(plays) > self.NUMBER_NORMAL_PLAYS:
             raise ValueError(f"Expected at most {self.NUMBER_NORMAL_PLAYS} normal plays, got {len(plays)}")
         padded = tuple(list(plays) + [None] * (self.NUMBER_NORMAL_PLAYS - len(plays)))
         return replace(self, normal_plays=padded)
 
     def with_custom_special_plays(self, plays: Sequence[CustomPlay | None]) -> GamePlan:
+        """Return a new GamePlan with `plays` written into the 10 custom special-teams slots.
+
+        Must be exactly NUMBER_SPECIAL_CATEGORIES (10) entries — one per category.
+        These are stored at even indices (0, 2, 4, ...) of the underlying special_plays
+        tuple; stock special plays at odd indices are preserved unchanged. Original
+        GamePlan is not mutated.
+        """
         if len(plays) != self.NUMBER_SPECIAL_CATEGORIES:
             raise ValueError(
                 f"Expected exactly {self.NUMBER_SPECIAL_CATEGORIES} custom special plays, got {len(plays)}"

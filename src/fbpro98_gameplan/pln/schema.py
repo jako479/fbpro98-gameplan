@@ -1,6 +1,10 @@
-from struct import Struct
+"""Binary chunk schema for the FbPro98 .pln file format.
 
-# See specs/pln.md for full .pln format documentation.
+Defines the `struct.Struct` layouts and chunk identifiers (G95, J95, S98) shared
+by the reader and writer. See specs/pln.md for full .pln format documentation.
+"""
+
+from struct import Struct
 
 DEFAULT_AUDIBLE = b"\x00\x01\x02\x03"
 
