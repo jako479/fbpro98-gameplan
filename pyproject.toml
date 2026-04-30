@@ -12,7 +12,7 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest", "pyright", "ruff", "ipython"]
+dev = ["pytest", "pyright==1.1.409", "ruff", "ipython"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -23,6 +23,20 @@ addopts = "-ra --strict-markers --strict-config"
 
 [tool.ruff]
 line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.pyright]
+include = ["src", "tests", "scripts"]
+exclude = ["**/*.egg-info", "**/.*", "**/.venv", "**/__pycache__", "**/build", "**/dist", "**/node_modules", "**/output", "**/venv"]
+extraPaths = ["src"]
+typeCheckingMode = "standard"
+reportUnusedImport = "warning"
+pythonVersion = "3.10"
+venvPath = ".."
+venv = ".venv"

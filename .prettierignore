@@ -1,4 +1,4 @@
-# Don’t let Prettier touch Python (Ruff owns .py)
+# Don't let Prettier touch Python (Ruff owns .py)
 **/*.py
 
 # Build artefacts

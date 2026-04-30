@@ -36,6 +36,9 @@ package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
+# AI
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db
