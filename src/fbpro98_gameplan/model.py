@@ -6,7 +6,7 @@ ProfileType, CustomPlay, StockPlay, and the top-level GamePlan dataclass.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, replace
 from enum import IntEnum
 from pathlib import PureWindowsPath
@@ -96,6 +96,49 @@ class GamePlan:
                 raise ValueError(f"Special slot {i} (non-stock) must be CustomPlay or None, got {type(play).__name__}")
             if i % 2 == 1 and not isinstance(play, StockPlay):
                 raise ValueError(f"Special slot {i} (stock) must be StockPlay or None, got {type(play).__name__}")
+            expected_category = i // 2 + 1
+            if play.special_category != expected_category:
+                raise ValueError(
+                    f"Special slot {i} expects play with special_category={expected_category}, "
+                    f"got special_category={play.special_category}"
+                )
+
+        expected_parity = 1 if self.is_offense else 0
+        for label, plays in (
+            ("normal", self.normal_plays),
+            ("special", self.special_plays),
+            ("clock", self.clock_plays),
+        ):
+            for i, play in enumerate(plays):
+                if play is None:
+                    continue
+                if play.play_category % 2 != expected_parity:
+                    play_side = "offensive" if play.play_category % 2 == 1 else "defensive"
+                    gp_side = "OFFENSE" if expected_parity == 1 else "DEFENSE"
+                    raise ValueError(
+                        f"{label.capitalize()} slot {i}: play has {play_side} "
+                        f"play_category=0x{play.play_category:02X}, but profile_type is {gp_side}"
+                    )
+
+        for i, play in enumerate(self.normal_plays):
+            if play is None:
+                continue
+            if play.special_category != 0:
+                raise ValueError(
+                    f"Normal slot {i} contains a special-teams play (special_category="
+                    f"{play.special_category}); only non-special-teams plays allowed in normal slots"
+                )
+
+        clock_special_categories = (11, 12)
+        for i, play in enumerate(self.clock_plays):
+            if play is None:
+                continue
+            expected = clock_special_categories[i]
+            if play.special_category != expected:
+                raise ValueError(
+                    f"Clock slot {i} expects play with special_category={expected}, "
+                    f"got special_category={play.special_category}"
+                )
 
     @property
     def is_offense(self) -> bool:
@@ -107,12 +150,12 @@ class GamePlan:
 
     @property
     def custom_special_plays(self) -> tuple[CustomPlay | None, ...]:
-        """The 10 non-stock special-teams slots, in special_category order (1–10)."""
+        """The 10 non-stock special-teams slots, in special_category order (1-10)."""
         return tuple(cast("CustomPlay | None", self.special_plays[i]) for i in range(0, self.NUMBER_SPECIAL_SLOTS, 2))
 
     @property
     def stock_special_plays(self) -> tuple[StockPlay | None, ...]:
-        """The 10 stock special-teams slots, in special_category order (1–10). Read-only."""
+        """The 10 stock special-teams slots, in special_category order (1-10). Read-only."""
         return tuple(cast("StockPlay | None", self.special_plays[i]) for i in range(1, self.NUMBER_SPECIAL_SLOTS, 2))
 
     def with_normal_plays(self, plays: Sequence[Play | None]) -> GamePlan:
@@ -126,19 +169,28 @@ class GamePlan:
         padded = tuple(list(plays) + [None] * (self.NUMBER_NORMAL_PLAYS - len(plays)))
         return replace(self, normal_plays=padded)
 
-    def with_custom_special_plays(self, plays: Sequence[CustomPlay | None]) -> GamePlan:
+    def with_custom_special_plays(self, plays: Iterable[CustomPlay | None]) -> GamePlan:
         """Return a new GamePlan with `plays` written into the 10 custom special-teams slots.
 
-        Must be exactly NUMBER_SPECIAL_CATEGORIES (10) entries — one per category.
-        These are stored at even indices (0, 2, 4, ...) of the underlying special_plays
-        tuple; stock special plays at odd indices are preserved unchanged. Original
-        GamePlan is not mutated.
+        Each play is placed into the slot dictated by its own `special_category` (1-10).
+        Order doesn't matter. None entries in `plays` are ignored. Slots not covered by
+        any play are cleared. The 10 stock special-teams slots (odd indices of the
+        underlying `special_plays` tuple) are preserved. Raises ValueError on out-of-range
+        `special_category` or two plays targeting the same category.
         """
-        if len(plays) != self.NUMBER_SPECIAL_CATEGORIES:
-            raise ValueError(
-                f"Expected exactly {self.NUMBER_SPECIAL_CATEGORIES} custom special plays, got {len(plays)}"
-            )
+        slots: list[CustomPlay | None] = [None] * self.NUMBER_SPECIAL_CATEGORIES
+        for play in plays:
+            if play is None:
+                continue
+            if not 1 <= play.special_category <= self.NUMBER_SPECIAL_CATEGORIES:
+                raise ValueError(
+                    f"Play has special_category={play.special_category}, must be 1..{self.NUMBER_SPECIAL_CATEGORIES}"
+                )
+            idx = play.special_category - 1
+            if slots[idx] is not None:
+                raise ValueError(f"Two custom special plays target special_category={play.special_category}")
+            slots[idx] = play
         new_special: list[Play | None] = list(self.special_plays)
-        for category_index, play in enumerate(plays):
+        for category_index, play in enumerate(slots):
             new_special[category_index * 2] = play
         return replace(self, special_plays=tuple(new_special))

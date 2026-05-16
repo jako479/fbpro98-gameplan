@@ -1,6 +1,6 @@
 """Parse FbPro98 .pln gameplan files into GamePlan objects.
 
-Reads the three on-disk chunks (G95 plays + offsets, J95 plan metadata, S98
+Reads the three on-disk blocks (G95 plays + offsets, J95 plan metadata, S98
 stock-map filename) and validates structural invariants (offset bounds, J95
 declared counts, file-size parity by profile type).
 """
@@ -10,14 +10,14 @@ from __future__ import annotations
 from os import PathLike
 from pathlib import Path
 
-from fbpro98_gameplan.pln.model import (
+from fbpro98_gameplan.model import (
     CustomPlay,
     GamePlan,
     Play,
     ProfileType,
     StockPlay,
 )
-from fbpro98_gameplan.pln.schema import (
+from fbpro98_gameplan.schema import (
     DEFAULT_AUDIBLE,
     G95_AUDIBLE,
     G95_HEADER,
@@ -29,7 +29,7 @@ from fbpro98_gameplan.pln.schema import (
     ID_S98,
     J95_HEADER,
     J95_PLAN_DATA,
-    S98_EXPECTED_PAYLOAD,
+    S98_EXPECTED_DATA,
     S98_HEADER,
 )
 
@@ -79,14 +79,14 @@ def _parse_g95(buffer: bytes, path: Path) -> tuple[int, bytes, list[Play | None]
     if len(buffer) < records_start:
         raise InvalidGamePlanError(f"File too small to contain PLN header and offsets table in {path}")
 
-    chunk_id, g95_size = G95_HEADER.unpack_from(buffer, 0)
-    if chunk_id != ID_G95:
-        chunk_id_str = chunk_id.decode("ASCII", errors="replace")
-        raise InvalidGamePlanError(f"Invalid header '{chunk_id_str}' at 0x0 in {path}")
+    block_id, g95_size = G95_HEADER.unpack_from(buffer, 0)
+    if block_id != ID_G95:
+        block_id_str = block_id.decode("ASCII", errors="replace")
+        raise InvalidGamePlanError(f"Invalid header '{block_id_str}' at 0x0 in {path}")
 
     g95_end = G95_HEADER.size + g95_size
     if g95_end > len(buffer):
-        raise InvalidGamePlanError(f"G95 chunk extends past end of file in {path}")
+        raise InvalidGamePlanError(f"G95 block extends past end of file in {path}")
 
     (audible,) = G95_AUDIBLE.unpack_from(buffer, G95_HEADER.size)
     if audible != DEFAULT_AUDIBLE:
@@ -148,13 +148,13 @@ def _parse_play(buffer: bytes, start: int, end: int, slot: int, path: Path) -> P
 
 def _parse_j95(buffer: bytes, g95_end: int, path: Path) -> tuple[ProfileType, tuple[int, int, int]]:
     if len(buffer) < g95_end + J95_HEADER.size + J95_PLAN_DATA.size:
-        raise InvalidGamePlanError(f"File too small to contain J95 chunk in {path}")
+        raise InvalidGamePlanError(f"File too small to contain J95 block in {path}")
     j95_id, j95_len = J95_HEADER.unpack_from(buffer, g95_end)
     if j95_id != ID_J95:
-        chunk_id_str = j95_id.decode("ASCII", errors="replace")
-        raise InvalidGamePlanError(f"Invalid header '{chunk_id_str}' at {g95_end:#x} in {path}")
+        block_id_str = j95_id.decode("ASCII", errors="replace")
+        raise InvalidGamePlanError(f"Invalid header '{block_id_str}' at {g95_end:#x} in {path}")
     if j95_len != J95_PLAN_DATA.size:
-        raise InvalidGamePlanError(f"J95 payload size {j95_len} != expected {J95_PLAN_DATA.size} in {path}")
+        raise InvalidGamePlanError(f"J95 data size {j95_len} != expected {J95_PLAN_DATA.size} in {path}")
     profile_type, num_custom, num_stock, num_special = J95_PLAN_DATA.unpack_from(buffer, g95_end + J95_HEADER.size)
     try:
         profile = ProfileType(profile_type)
@@ -165,21 +165,21 @@ def _parse_j95(buffer: bytes, g95_end: int, path: Path) -> tuple[ProfileType, tu
 
 def _parse_s98(buffer: bytes, s98_start: int, path: Path) -> str:
     if len(buffer) < s98_start + S98_HEADER.size:
-        raise InvalidGamePlanError(f"File too small to contain S98 chunk header in {path}")
+        raise InvalidGamePlanError(f"File too small to contain S98 block header in {path}")
     s98_id, s98_len = S98_HEADER.unpack_from(buffer, s98_start)
     if s98_id != ID_S98:
-        chunk_id_str = s98_id.decode("ASCII", errors="replace")
-        raise InvalidGamePlanError(f"Invalid header '{chunk_id_str}' at {s98_start:#x} in {path}")
-    if s98_len != len(S98_EXPECTED_PAYLOAD):
-        raise InvalidGamePlanError(f"S98 payload size {s98_len} != expected {len(S98_EXPECTED_PAYLOAD)} in {path}")
-    payload_start = s98_start + S98_HEADER.size
-    payload_end = payload_start + s98_len
-    if payload_end > len(buffer):
-        raise InvalidGamePlanError(f"S98 chunk payload extends past end of file in {path}")
-    payload = buffer[payload_start:payload_end]
-    if payload != S98_EXPECTED_PAYLOAD:
-        raise InvalidGamePlanError(f"S98 payload {payload!r} != expected {S98_EXPECTED_PAYLOAD!r} in {path}")
-    return payload.rstrip(b"\x00").decode("ASCII", errors="replace")
+        block_id_str = s98_id.decode("ASCII", errors="replace")
+        raise InvalidGamePlanError(f"Invalid header '{block_id_str}' at {s98_start:#x} in {path}")
+    if s98_len != len(S98_EXPECTED_DATA):
+        raise InvalidGamePlanError(f"S98 data size {s98_len} != expected {len(S98_EXPECTED_DATA)} in {path}")
+    data_start = s98_start + S98_HEADER.size
+    data_end = data_start + s98_len
+    if data_end > len(buffer):
+        raise InvalidGamePlanError(f"S98 block data extends past end of file in {path}")
+    data = buffer[data_start:data_end]
+    if data != S98_EXPECTED_DATA:
+        raise InvalidGamePlanError(f"S98 data {data!r} != expected {S98_EXPECTED_DATA!r} in {path}")
+    return data.rstrip(b"\x00").decode("ASCII", errors="replace")
 
 
 def _validate_j95_counts(

@@ -17,13 +17,13 @@
 #pragma hide()
 
 #pragma enumsize(4)
-typedef enum CHUNK_TYPE
+typedef enum BLOCK_TYPE
 {
     G95 = "G95:",
     J95 = "J95:",
     S98 = "S98:"
 
-} CHUNK_TYPE;
+} BLOCK_TYPE;
 
 struct STOCK_PLAY
 {
@@ -57,7 +57,7 @@ struct G95
 {
 #pragma lockAt(0x00000000)
 
-    CHUNK_TYPE           id;                    // 0x00
+    BLOCK_TYPE           id;                    // 0x00
     DWORD                size;                  // 0x04 // stream length
 	CHAR                 audible[4];            // 0x08 // 0x00
 	WORD                 offsets[86];           // 0x0C // offset to each play (starting from 0x0C)
@@ -66,7 +66,7 @@ struct G95
 	union PLAY_IN_PLAN   stockSpecialPlays[10]; //      // variable length;
 	union PLAY_IN_PLAN   clockPlays[2];         //
 
-    __verify(id == CHUNK_TYPE.G95);
+    __verify(id == BLOCK_TYPE.G95);
 };
 
 #pragma enumsize(1)
@@ -79,7 +79,7 @@ typedef enum PROFILE_TYPE
 
 struct J95
 {
-    CHUNK_TYPE      id;                 // 0x00
+    BLOCK_TYPE      id;                 // 0x00
     DWORD           size;               // 0x04 // stream length // 0x07
     PROFILE_TYPE    type;               // 0x08 // char OffFlag
     WORD            numCustomPlays;     // 0x09
@@ -87,17 +87,17 @@ struct J95
     WORD            numSpecialPlays;    // 0x0D
                                         // 0x0F
 
-    __verify(id == CHUNK_TYPE.J95);
+    __verify(id == BLOCK_TYPE.J95);
     __verify(size == 0x07);
 };
 
 struct S98
 {
-    CHUNK_TYPE      id;                 // 0x00
+    BLOCK_TYPE      id;                 // 0x00
     DWORD           size;               // 0x04 // stream length
     BYTE            mapFilename[size];  // 0x08
 
-    __verify(id == CHUNK_TYPE.S98);
+    __verify(id == BLOCK_TYPE.S98);
 };
 
 struct PLNFILE

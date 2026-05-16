@@ -1,18 +1,24 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "fbpro98-gameplan"
-version = "1.0.1"
-description = "Library for parsing Front Page Sports Football Pro '98 gameplan files"
-authors = [{ name = "Brian J" }]
+version = "0.1.0"
+description = "Library for parsing and editing a Front Page Sports Football Pro '98 game plan (.pln)"
+authors = [{ name = "Brian Jacobs" }]
 readme = "README.md"
-requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13"
 dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest", "pyright==1.1.409", "ruff", "ipython"]
+
+[project.urls]
+Homepage = "https://github.com/jako479/fbpro98-gameplan"
+Repository = "https://github.com/jako479/fbpro98-gameplan"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -23,7 +29,7 @@ addopts = "-ra --strict-markers --strict-config"
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = [
@@ -61,6 +67,6 @@ exclude = [
 extraPaths = ["src"]
 typeCheckingMode = "standard"
 reportUnusedImport = "warning"
-pythonVersion = "3.10"
+pythonVersion = "3.13"
 venvPath = ".."
 venv = ".venv"

@@ -1,6 +1,6 @@
 """Serialize GamePlan objects back to FbPro98 .pln file bytes.
 
-Builds the three on-disk chunks (G95 plays + offsets, J95 plan metadata,
+Builds the three on-disk blocks (G95 plays + offsets, J95 plan metadata,
 S98 stock-map filename) and pads the file to the parity expected by the
 gameplan's profile type (offense even, defense odd).
 """
@@ -10,14 +10,14 @@ from __future__ import annotations
 from os import PathLike
 from pathlib import Path
 
-from fbpro98_gameplan.pln.model import (
+from fbpro98_gameplan.model import (
     CustomPlay,
     GamePlan,
     Play,
     ProfileType,
     StockPlay,
 )
-from fbpro98_gameplan.pln.schema import (
+from fbpro98_gameplan.schema import (
     G95_AUDIBLE,
     G95_HEADER,
     G95_OFFSETS_TABLE,
@@ -65,9 +65,9 @@ def _build_g95(gameplan: GamePlan) -> bytes:
         offsets[slot] = records_base + len(records) - offsets_table_start
         records += _build_play(play)
 
-    g95_payload_size = G95_AUDIBLE.size + G95_OFFSETS_TABLE.size + len(records)
+    g95_data_size = G95_AUDIBLE.size + G95_OFFSETS_TABLE.size + len(records)
     return (
-        G95_HEADER.pack(ID_G95, g95_payload_size)
+        G95_HEADER.pack(ID_G95, g95_data_size)
         + G95_AUDIBLE.pack(gameplan.audible)
         + G95_OFFSETS_TABLE.pack(*offsets)
         + bytes(records)
@@ -97,5 +97,5 @@ def _build_j95(gameplan: GamePlan) -> bytes:
 
 
 def _build_s98(gameplan: GamePlan) -> bytes:
-    payload = gameplan.map_filename.encode("ascii") + b"\x00"
-    return S98_HEADER.pack(ID_S98, len(payload)) + payload
+    data = gameplan.map_filename.encode("ascii") + b"\x00"
+    return S98_HEADER.pack(ID_S98, len(data)) + data

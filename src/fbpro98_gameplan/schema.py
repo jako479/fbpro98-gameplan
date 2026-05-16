@@ -1,6 +1,6 @@
-"""Binary chunk schema for the FbPro98 .pln file format.
+"""Binary block schema for the FbPro98 .pln file format.
 
-Defines the `struct.Struct` layouts and chunk identifiers (G95, J95, S98) shared
+Defines the `struct.Struct` layouts and block identifiers (G95, J95, S98) shared
 by the reader and writer. See specs/pln.md for full .pln format documentation.
 """
 
@@ -16,7 +16,7 @@ G95_STOCK_PLAY_BODY = Struct("<8sIH")
 J95_HEADER = Struct("<4sI")
 J95_PLAN_DATA = Struct("<BHHH")
 S98_HEADER = Struct("<4sI")
-S98_EXPECTED_PAYLOAD = b"STOCK98.MAP\x00"
+S98_EXPECTED_DATA = b"STOCK98.MAP\x00"
 
 ID_G95 = b"G95:"
 ID_J95 = b"J95:"

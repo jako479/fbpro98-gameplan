@@ -3,7 +3,7 @@
 // Notes:
 // - Hex Workshop had: #pragma byteorder(little_endian)
 //   ImHex equivalent: #pragma endian little
-// - Enum CHUNK_TYPE values in the .hsl were string literals ("G95:", etc.)
+// - Enum BLOCK_TYPE values in the .hsl were string literals ("G95:", etc.)
 //   ImHex doesn't support enum string literals
 
 #pragma endian little
@@ -12,7 +12,7 @@
 #include <std/sys.pat>
 
 // ---- 4-byte tags (little-endian) ----
-enum ChunkType : u32 {
+enum BlockType : u32 {
     G95 = 0x3A353947,  // "G95:"
     J95 = 0x3A35394A,  // "J95:"
     S98 = 0x3A383953   // "S98:"
@@ -46,8 +46,8 @@ struct PlayInPlan {
 
 // ---- G95: header + four ordered offset arrays + play data ----
 struct G95 {
-    ChunkType id;   // "G95:"
-    u32       len;  // payload length (excludes id+len)
+    BlockType id;   // "G95:"
+    u32       len;  // data length (excludes id+len)
 
     u8  audible[4];       // 00|01|02|03 // Ignore for PNFL game plans
     u16 playOffsets[86];  // 64 Normal, 20 Special, 2 Clock
@@ -59,40 +59,40 @@ struct G95 {
                           // versions of each. Each special teams play has
                           // playCategory of 1 and userCategory of 1.
 
-    // Plays continue until the end of the G95 chunk (id+len header is 8 bytes,
-    // then `len` bytes of payload).
+    // Plays continue until the end of the G95 block (id+len header is 8 bytes,
+    // then `len` bytes of data).
     PlayInPlan plays[while($ < addressof(this) + 8 + len)];
 
-    std::assert(id == ChunkType::G95, "Invalid chunk ID");
+    std::assert(id == BlockType::G95, "Invalid block ID");
 };
 
-// ---- J95: header + 7-byte payload (length = 0x07) ----
+// ---- J95: header + 7-byte data (length = 0x07) ----
 enum ProfileType : u8 { DEFENSE = 0, OFFENSE = 1 };
 
 struct J95 {
-    ChunkType   id;   // "J95:"
-    u32         len;  // payload length (excludes id+len)
+    BlockType   id;   // "J95:"
+    u32         len;  // data length (excludes id+len)
 
-    // payload (1 + 2 + 2 + 2 = 7 bytes)
+    // data (1 + 2 + 2 + 2 = 7 bytes)
     ProfileType profileType;    // 0=DEFENSE, 1=OFFENSE
     u16         numCustomPlays;
     u16         numStockPlays;
     u16         numSpecialPlays;
 
-    std::assert(id == ChunkType::J95, "Invalid chunk ID");
-    std::assert(len == 7, "Invalid payload length");
+    std::assert(id == BlockType::J95, "Invalid block ID");
+    std::assert(len == 7, "Invalid data length");
 };
 
-// ---- S98: header + length-prefixed filename (last chunk) ----
+// ---- S98: header + length-prefixed filename (last block) ----
 struct S98 {
-    ChunkType id;   // "S98:"
-    u32       len;  // payload length (excludes id+len)
+    BlockType id;   // "S98:"
+    u32       len;  // data length (excludes id+len)
 
     char      map_filename[len];  // STOCK98.MAP (null-terminated)
     // ignore any trailing padding at EOF
 
-    std::assert(id == ChunkType::S98, "Invalid chunk ID");
-    std::assert(len == 12, "Invalid payload length");
+    std::assert(id == BlockType::S98, "Invalid block ID");
+    std::assert(len == 12, "Invalid data length");
 };
 
 // ---- Top-level file ----

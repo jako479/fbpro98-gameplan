@@ -12,7 +12,7 @@ from fbpro98_gameplan import (
     read_gameplan,
     write_gameplan,
 )
-from fbpro98_gameplan.pln.schema import G95_HEADER, J95_HEADER, J95_PLAN_DATA
+from fbpro98_gameplan.schema import G95_HEADER, J95_HEADER, J95_PLAN_DATA
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / "data"
 OFFENSE_PATH = TEST_DATA_DIR / "offense.pln"
@@ -178,10 +178,10 @@ def test_j95_counts_updated(tmp_path: Path) -> None:
     _, new_g95_size = G95_HEADER.unpack_from(buf, 0)
     g95_end = G95_HEADER.size + new_g95_size
 
-    j95_payload_offset = g95_end + J95_HEADER.size
+    j95_data_offset = g95_end + J95_HEADER.size
     profile_type, num_custom, num_stock, num_special = J95_PLAN_DATA.unpack_from(
         buf,
-        j95_payload_offset,
+        j95_data_offset,
     )
 
     assert num_custom == 10
