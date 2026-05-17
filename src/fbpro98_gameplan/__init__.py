@@ -1,4 +1,4 @@
-"""fbpro98-gameplan — Library for parsing Front Page Sports Football Pro '98 gameplan (.pln) files."""
+"""Library for parsing and editing a Front Page Sports Football Pro '98 game plan (.pln)."""
 
 from fbpro98_gameplan.model import (
     CustomPlay,
