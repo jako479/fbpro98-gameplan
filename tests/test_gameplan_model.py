@@ -195,7 +195,7 @@ def test_special_slot_category_mismatch_in_init_raises():
 
 def test_with_custom_special_plays_out_of_range_category_raises():
     gameplan = _empty_defense()
-    with pytest.raises(ValueError, match="must be 1..10"):
+    with pytest.raises(ValueError, match=r"must be 1\.\.10"):
         gameplan.with_custom_special_plays([_make_custom(special_category=11)])
 
 
@@ -292,7 +292,7 @@ def test_defensive_special_play_in_offensive_gameplan_raises():
 def test_defensive_clock_play_in_offensive_gameplan_raises():
     bad_spike = _make_custom(special_category=11, play_category=0)  # even = defensive
     kneel = _make_custom(special_category=12, play_category=1)
-    with pytest.raises(ValueError, match="Clock slot 0:.*profile_type is OFFENSE"):
+    with pytest.raises(ValueError, match=r"Clock slot 0:.*profile_type is OFFENSE"):
         GamePlan(
             profile_type=ProfileType.OFFENSE,
             normal_plays=_empty_normals(),
