@@ -17,7 +17,7 @@ src/fbpro98_gameplan/
 └── schema.py      # struct format strings for G95/J95/S98 blocks
 ```
 
-`specs/pln.hexpat` and `specs/pln.md` document the on-disk byte layout independently of this code.
+`specs/fbpro98-pln.hexpat` and `specs/pln.md` document the on-disk byte layout independently of this code.
 
 ## What this package does
 

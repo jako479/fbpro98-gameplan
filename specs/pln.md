@@ -57,7 +57,7 @@ Special-teams slots (64–83) are organized by `special_category` (`0x01`–`0x0
 | 80–81 | `0x09`           | Free Kick      | Free Kick Return       | non-stock, stock |
 | 82–83 | `0x0A`           | Squib Kick     | Squib Return           | non-stock, stock |
 
-All special-teams plays have `play_category = 1` and `user_category = 1`.
+All special-teams plays have `play_category` and `user_category` set per profile: `1` in offensive game plans, `0` in defensive game plans.
 
 Clock plays (slots 84–85) are present only in offensive game plans; defensive game plans leave these offsets as `0x0000`.
 
