@@ -35,12 +35,34 @@ StrPath = str | PathLike[str]
 
 
 def write_gameplan(gameplan: GamePlan, path: StrPath) -> None:
-    """Serialize a `GamePlan` and write it to a `.pln` file."""
+    """Serialize a GamePlan and write it to a .pln file.
+
+    Args:
+        gameplan: The GamePlan to serialize.
+        path: Filesystem path to write the .pln file to. Any existing file at
+            this path will be overwritten.
+
+    Raises:
+        OSError: If the file cannot be written (subclasses include
+            PermissionError, IsADirectoryError, FileNotFoundError for the
+            parent directory).
+    """
     Path(path).write_bytes(build_gameplan_bytes(gameplan))
 
 
 def build_gameplan_bytes(gameplan: GamePlan) -> bytes:
-    """Serialize a `GamePlan` to `.pln` file bytes."""
+    """Serialize a GamePlan to .pln file bytes.
+
+    Builds the three on-disk blocks (G95 plays + offsets, J95 plan metadata,
+    S98 stock-map filename) and pads the file to the parity expected by the
+    gameplan's profile type (offense even, defense odd).
+
+    Args:
+        gameplan: The GamePlan to serialize.
+
+    Returns:
+        Bytes of the resulting .pln file, ready to write.
+    """
     output = _build_g95(gameplan) + _build_j95(gameplan) + _build_s98(gameplan)
     needs_odd = gameplan.profile_type == ProfileType.DEFENSE
     if len(output) % 2 != needs_odd:

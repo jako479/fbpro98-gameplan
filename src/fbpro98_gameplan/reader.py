@@ -41,13 +41,48 @@ class InvalidGamePlanError(ValueError):
 
 
 def read_gameplan(path: StrPath) -> GamePlan:
-    """Read and parse a `.pln` gameplan file."""
+    """Read and parse a .pln gameplan file from disk.
+
+    Args:
+        path: Filesystem path to the .pln file.
+
+    Returns:
+        Parsed GamePlan.
+
+    Raises:
+        InvalidGamePlanError: If the file is not a structurally valid .pln (bad
+            block IDs, mismatched sizes, truncated structure, J95 counts that
+            don't match the parsed plays, or wrong file-size parity for the
+            profile type).
+        ValueError: If the parsed data violates a GamePlan invariant in
+            __post_init__ (e.g., a special slot holds a play with the wrong
+            `special_category`).
+        OSError: If the file cannot be opened or read (subclasses include
+            FileNotFoundError, PermissionError, IsADirectoryError).
+    """
     file_path = Path(path)
     return parse_gameplan(file_path.read_bytes(), file_path)
 
 
 def parse_gameplan(buffer: bytes, path: StrPath = "<buffer>") -> GamePlan:
-    """Parse a `.pln` gameplan from raw bytes."""
+    """Parse a .pln gameplan from raw bytes.
+
+    Args:
+        buffer: Full contents of a .pln file.
+        path: Path used only in error messages. Defaults to "<buffer>" when
+            parsing data that did not come from disk.
+
+    Returns:
+        Parsed GamePlan.
+
+    Raises:
+        InvalidGamePlanError: If the buffer does not contain a valid G95+J95+S98
+            block sequence. Triggered by wrong block IDs, mismatched sizes,
+            truncated structure, J95 counts that disagree with the parsed plays,
+            or wrong file-size parity for the profile type.
+        ValueError: If the parsed data violates a GamePlan invariant in
+            __post_init__.
+    """
     file_path = Path(path)
     g95_size, audible, plays_by_slot = _parse_g95(buffer, file_path)
     g95_end = G95_HEADER.size + g95_size

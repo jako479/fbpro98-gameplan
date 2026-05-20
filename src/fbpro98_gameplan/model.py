@@ -22,31 +22,65 @@ class ProfileType(IntEnum):
 
 @dataclass(frozen=True, slots=True)
 class CustomPlay:
-    """A user-authored play stored as a filename reference (`stock_flag = 0`)."""
+    """A user-authored play stored as a filename reference (`stock_flag = 0`).
+
+    See specs/pln.md section 2.3 for the on-disk layout.
+    """
 
     filename: str
+    """Filename of the .ply file backing this play, as written on disk (Windows
+    path conventions; usually all-uppercase 8.3 form like `MYPLAY.PLY`)."""
+
     play_category: int
+    """Game category byte. Bit 0 is the side-of-ball flag
+    (odd = offense / kicking, even = defense / receiving)."""
+
     special_category: int
+    """Special-teams category code (0 = not special teams; 1-10 = the ten
+    special-teams categories defined by the game)."""
+
     user_category: int
+    """User category byte. Bits 5-0 hold the game's play category;
+    bits 7-6 vary across plays in the same category."""
 
     @property
     def name(self) -> str:
+        """Display name: the filename's stem (without path or extension)."""
         return PureWindowsPath(self.filename).stem
 
 
 @dataclass(frozen=True, slots=True)
 class StockPlay:
-    """A built-in play referenced from `STOCK98.MAP` (`stock_flag = 1`)."""
+    """A built-in play referenced from `STOCK98.MAP` (`stock_flag = 1`).
+
+    See specs/pln.md section 2.3 for the on-disk layout.
+    """
 
     play_name: str
+    """Eight-character ASCII play name as stored on disk (with trailing
+    nulls/spaces stripped)."""
+
     map_offset: int
+    """Byte offset into `STOCK98.MAP` where this play's bytes begin."""
+
     map_size: int
+    """Number of bytes this play occupies inside `STOCK98.MAP`."""
+
     play_category: int
+    """Game category byte. Bit 0 is the side-of-ball flag
+    (odd = offense / kicking, even = defense / receiving)."""
+
     special_category: int
+    """Special-teams category code (0 = not special teams; 1-10 = the ten
+    special-teams categories defined by the game)."""
+
     user_category: int
+    """User category byte. Bits 5-0 hold the game's play category;
+    bits 7-6 vary across plays in the same category."""
 
     @property
     def name(self) -> str:
+        """Display name: the stock play name (same as `play_name`)."""
         return self.play_name
 
 
@@ -55,20 +89,51 @@ Play = CustomPlay | StockPlay
 
 @dataclass(frozen=True, slots=True)
 class GamePlan:
-    """Full in-memory representation of a `.pln` gameplan file."""
+    """Full in-memory representation of a `.pln` gameplan file.
+
+    See specs/pln.md for the on-disk binary format. Construction validates
+    structural invariants (slot counts, side-of-ball consistency, special-
+    category alignment, file-size parity) via __post_init__; ValueError is
+    raised for any violation.
+    """
 
     NUMBER_NORMAL_PLAYS: ClassVar[int] = 64
+    """Number of normal (non-special, non-clock) play slots."""
+
     NUMBER_SPECIAL_SLOTS: ClassVar[int] = 20
+    """Number of special-teams slots (10 categories × 2 custom/stock)."""
+
     NUMBER_SPECIAL_CATEGORIES: ClassVar[int] = 10
+    """Number of distinct special-teams categories (kickoff, punt, FG, etc.)."""
+
     NUMBER_CLOCK_SLOTS: ClassVar[int] = 2
+    """Number of clock-management slots (offense only; categories 11 and 12)."""
+
     NUMBER_PLAY_SLOTS: ClassVar[int] = 86
+    """Total slot count in the G95 offsets table (64 normal + 20 special + 2 clock)."""
 
     profile_type: ProfileType
+    """Whether this gameplan is for offense or defense. Determines clock-slot
+    population and file-size parity."""
+
     normal_plays: tuple[Play | None, ...]
+    """The 64 normal play slots. None indicates an unused slot."""
+
     special_plays: tuple[Play | None, ...]
+    """The 20 special-teams slots, paired by category: (custom_1, stock_1,
+    custom_2, stock_2, ..., custom_10, stock_10). Even indices hold CustomPlay
+    or None; odd indices hold StockPlay or None."""
+
     clock_plays: tuple[Play | None, Play | None]
+    """The 2 clock-management slots. Both must be populated for offense
+    gameplans; both must be None for defense gameplans."""
+
     audible: bytes = b"\x00\x01\x02\x03"
+    """Four-byte audible play reference stored in the G95 block."""
+
     map_filename: str = "STOCK98.MAP"
+    """Filename of the stock-play map this gameplan references (stored in the
+    S98 block)."""
 
     def __post_init__(self) -> None:
         if len(self.normal_plays) != self.NUMBER_NORMAL_PLAYS:
@@ -142,27 +207,42 @@ class GamePlan:
 
     @property
     def is_offense(self) -> bool:
+        """True if this gameplan is for offense."""
         return self.profile_type == ProfileType.OFFENSE
 
     @property
     def is_defense(self) -> bool:
+        """True if this gameplan is for defense."""
         return self.profile_type == ProfileType.DEFENSE
 
     @property
     def custom_special_plays(self) -> tuple[CustomPlay | None, ...]:
-        """The 10 non-stock special-teams slots, in special_category order (1-10)."""
+        """The 10 custom (user-authored) special-teams slots, in special_category
+        order (1-10). Derived view over the even indices of `special_plays`."""
         return tuple(cast("CustomPlay | None", self.special_plays[i]) for i in range(0, self.NUMBER_SPECIAL_SLOTS, 2))
 
     @property
     def stock_special_plays(self) -> tuple[StockPlay | None, ...]:
-        """The 10 stock special-teams slots, in special_category order (1-10). Read-only."""
+        """The 10 stock special-teams slots, in special_category order (1-10).
+        Derived view over the odd indices of `special_plays`; read-only."""
         return tuple(cast("StockPlay | None", self.special_plays[i]) for i in range(1, self.NUMBER_SPECIAL_SLOTS, 2))
 
     def with_normal_plays(self, plays: Sequence[Play | None]) -> GamePlan:
         """Return a new GamePlan with `plays` placed in the 64 normal slots.
 
-        Shorter sequences are right-padded with None to fill all 64 slots;
-        longer sequences raise ValueError. Original GamePlan is not mutated.
+        The original GamePlan is not mutated. Shorter sequences are right-padded
+        with None to fill all 64 slots.
+
+        Args:
+            plays: Up to 64 plays (or None entries) in slot order.
+
+        Returns:
+            A new GamePlan with the updated normal slots; all other fields copied
+            from self.
+
+        Raises:
+            ValueError: If `plays` contains more than 64 entries, or if the new
+                GamePlan would violate any __post_init__ invariant.
         """
         if len(plays) > self.NUMBER_NORMAL_PLAYS:
             raise ValueError(f"Expected at most {self.NUMBER_NORMAL_PLAYS} normal plays, got {len(plays)}")
@@ -170,13 +250,24 @@ class GamePlan:
         return replace(self, normal_plays=padded)
 
     def with_custom_special_plays(self, plays: Iterable[CustomPlay | None]) -> GamePlan:
-        """Return a new GamePlan with `plays` written into the 10 custom special-teams slots.
+        """Return a new GamePlan with `plays` written into the 10 custom
+        special-teams slots.
 
-        Each play is placed into the slot dictated by its own `special_category` (1-10).
-        Order doesn't matter. None entries in `plays` are ignored. Slots not covered by
-        any play are cleared. The 10 stock special-teams slots (odd indices of the
-        underlying `special_plays` tuple) are preserved. Raises ValueError on out-of-range
-        `special_category` or two plays targeting the same category.
+        Each play is placed into the slot dictated by its own `special_category`
+        (1-10). Order doesn't matter. None entries in `plays` are ignored. Slots
+        not covered by any play are cleared. The 10 stock special-teams slots
+        (odd indices of the underlying `special_plays` tuple) are preserved.
+
+        Args:
+            plays: Iterable of CustomPlay (or None) values; each play's
+                `special_category` selects its destination slot.
+
+        Returns:
+            A new GamePlan with the updated custom special-teams slots.
+
+        Raises:
+            ValueError: If any play's `special_category` is outside 1-10, or if
+                two plays target the same category.
         """
         slots: list[CustomPlay | None] = [None] * self.NUMBER_SPECIAL_CATEGORIES
         for play in plays:

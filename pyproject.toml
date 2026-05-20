@@ -23,6 +23,9 @@ Repository = "https://github.com/jako479/fbpro98-gameplan"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+fbpro98_gameplan = ["py.typed"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
