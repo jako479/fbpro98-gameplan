@@ -71,3 +71,11 @@ The reader raises `InvalidGamePlanError` on any structural deviation from the `.
 ```bash
 pytest
 ```
+
+## Building a Release
+
+Ships these artifacts to the umbrella bundle:
+
+- Python wheel (built by `pnfl/scripts/build_release.py`)
+
+Consumed transitively by CLI subprojects in the [`pnfl`](../pnfl) umbrella.

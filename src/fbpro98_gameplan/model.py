@@ -101,7 +101,7 @@ class GamePlan:
     """Number of normal (non-special, non-clock) play slots."""
 
     NUMBER_SPECIAL_SLOTS: ClassVar[int] = 20
-    """Number of special-teams slots (10 categories × 2 custom/stock)."""
+    """Number of special-teams slots (10 categories x 2 custom/stock)."""
 
     NUMBER_SPECIAL_CATEGORIES: ClassVar[int] = 10
     """Number of distinct special-teams categories (kickoff, punt, FG, etc.)."""
